@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Student Depression Risk Predictor</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; background:#f7f7fb; color:#222; }
+  h1 { font-size: 1.5rem; }
+  form { background:#fff; padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  label { display:block; margin-top: 14px; font-weight: 600; font-size: 0.9rem; }
+  input, select { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+  .row { display:flex; gap: 16px; }
+  .row > div { flex: 1; }
+  button { margin-top: 20px; padding: 10px 20px; background:#4f46e5; color:#fff; border:none; border-radius: 6px; cursor:pointer; font-size:1rem; }
+  button:hover { background:#4338ca; }
+  .result { margin-top: 20px; padding: 16px; border-radius: 8px; font-weight: 600; }
+  .result.risk { background:#fee2e2; color:#991b1b; }
+  .result.safe { background:#dcfce7; color:#166534; }
+  .result.error { background:#fef3c7; color:#92400e; }
+  .disclaimer { font-size: 0.8rem; color:#666; margin-top: 24px; }
+</style>
+</head>
+<body>
+  <h1>Student Depression Risk Predictor</h1>
+  <p>This form runs a RandomForest model trained on the Kaggle "Student Depression Dataset". It's a demo / educational project, not a diagnostic tool.</p>
+
+  <form method="POST" action="/predict">
+    <div class="row">
+      <div>
+        <label>Gender</label>
+        <select name="Gender" required>
+          {% for v in options['Gender'] %}<option value="{{v}}">{{v}}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Age</label>
+        <input type="number" step="1" name="Age" value="22" required>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>City</label>
+        <select name="City" required>
+          {% for v in options['City'] %}<option value="{{v}}">{{v}}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Profession</label>
+        <select name="Profession" required>
+          {% for v in options['Profession'] %}<option value="{{v}}">{{v}}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Academic Pressure (0-5)</label>
+        <input type="number" step="0.1" min="0" max="5" name="Academic Pressure" value="3" required>
+      </div>
+      <div>
+        <label>Work Pressure (0-5)</label>
+        <input type="number" step="0.1" min="0" max="5" name="Work Pressure" value="0" required>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>CGPA</label>
+        <input type="number" step="0.01" min="0" max="10" name="CGPA" value="7.5" required>
+      </div>
+      <div>
+        <label>Study Satisfaction (0-5)</label>
+        <input type="number" step="0.1" min="0" max="5" name="Study Satisfaction" value="3" required>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Job Satisfaction (0-5)</label>
+        <input type="number" step="0.1" min="0" max="5" name="Job Satisfaction" value="0" required>
+      </div>
+      <div>
+        <label>Sleep Duration</label>
+        <select name="Sleep Duration" required>
+          {% for v in options['Sleep Duration'] %}<option value="{{v}}">{{v}}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Dietary Habits</label>
+        <select name="Dietary Habits" required>
+          {% for v in options['Dietary Habits'] %}<option value="{{v}}">{{v}}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Degree</label>
+        <select name="Degree" required>
+          {% for v in options['Degree'] %}<option value="{{v}}">{{v}}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Ever had suicidal thoughts?</label>
+        <select name="Have you ever had suicidal thoughts ?" required>
+          {% for v in options['Suicidal'] %}<option value="{{v}}">{{v}}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Family history of mental illness?</label>
+        <select name="Family History of Mental Illness" required>
+          {% for v in options['Family History'] %}<option value="{{v}}">{{v}}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Work/Study Hours per day</label>
+        <input type="number" step="0.5" min="0" max="24" name="Work/Study Hours" value="6" required>
+      </div>
+      <div>
+        <label>Financial Stress (0-5)</label>
+        <input type="number" step="0.1" min="0" max="5" name="Financial Stress" value="2" required>
+      </div>
+    </div>
+
+    <button type="submit">Predict</button>
+  </form>
+
+  {% if result %}
+    {% if result.error %}
+      <div class="result error">Error: {{ result.error }}</div>
+    {% else %}
+      <div class="result {{ 'risk' if 'At risk' in result.label else 'safe' }}">
+        {{ result.label }} (confidence: {{ result.confidence }})
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <p class="disclaimer">This tool is for educational/demo purposes only and is not a substitute for professional mental health assessment or advice.</p>
+</body>
+</html>
