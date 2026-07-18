@@ -1,4 +1,3 @@
-# student-depression-app
 A small Flask web app that serves a `RandomForestClassifier` trained on the
 Kaggle ["Student Depression Dataset"](https://www.kaggle.com/datasets/hopesb/student-depression-dataset).
 Given info like academic pressure, sleep duration, financial stress, etc., it
@@ -12,7 +11,7 @@ predicts whether a student is at risk of depression.
 ```
 .
 ├── app.py                  # Flask app (web form + JSON API)
-├── model.pkl               # Trained RandomForestClassifier
+├── model.joblib            # Trained RandomForestClassifier (compressed, ~12MB)
 ├── model_columns.pkl       # Exact one-hot-encoded column order used at training time
 ├── dropdown_options.json   # Category values used to populate the form's dropdowns
 ├── templates/
@@ -24,7 +23,12 @@ predicts whether a student is at risk of depression.
 
 ## How it works
 
-- `model.pkl` and `model_columns.pkl` are loaded once when the app starts.
+- `model.joblib` and `model_columns.pkl` are loaded once when the app starts.
+  The model is saved with `joblib.dump(model, "model.joblib", compress=3)`
+  instead of raw `pickle` — same model, identical predictions, but compressed
+  from ~76MB down to ~12MB. This matters because GitHub warns on files over
+  50MB and blocks pushes over 100MB, and smaller files mean faster Render
+  builds/deploys.
 - `model_columns.pkl` matters because `pd.get_dummies()` only creates columns
   for categories present in whatever row you feed it. To match what the model
   expects, every new input row is one-hot encoded and then **reindexed**
@@ -85,8 +89,8 @@ git branch -M main
 git push -u origin main
 ```
 
-> `model.pkl` is ~76 MB. Regular GitHub repos handle files under 100 MB fine,
-> so a plain `git push` will work — just don't add it to `.gitignore`.
+> `model.joblib` is ~12 MB (compressed from the original ~76 MB pickle), so a
+> plain `git push` will work fine — just don't add it to `.gitignore`.
 
 ### 2. Create the Render Web Service
 
@@ -136,7 +140,8 @@ If it succeeds, you'll see `Your service is live 🎉` and a URL like
 | `ERROR: Could not open requirements file` | Render is building from the wrong folder | Set **Root Directory** to the folder that actually contains `requirements.txt` |
 | Build succeeds but app crashes on start | Wrong start command | Make sure it's exactly `gunicorn app:app` (matches the Flask variable name `app` inside `app.py`) |
 | `ModuleNotFoundError` at runtime | A package used in `app.py` isn't in `requirements.txt` | Add it and redeploy |
-| Predictions look wrong / all same class | `model_columns.pkl` missing or not loaded | Confirm both `model.pkl` and `model_columns.pkl` were committed and pushed to GitHub |
+| Predictions look wrong / all same class | `model_columns.pkl` missing or not loaded | Confirm both `model.joblib` and `model_columns.pkl` were committed and pushed to GitHub |
+| `git push` rejected for large file / repo feels slow | Old ~76MB `model.pkl` still tracked in git history | Make sure you're using the newer `model.joblib` (~12MB) and, if the big file was ever committed before, remove it from history (`git rm --cached model.pkl` then commit, or start a fresh repo) |
 | Free tier app "spins down" and is slow to respond after inactivity | Normal Render free-tier behavior | Upgrade to a paid instance if you need always-on, low-latency responses |
 
 ### 6. Redeploying after changes
@@ -148,3 +153,6 @@ git add .
 git commit -m "update model"
 git push
 ```
+
+That's it — Render picks up the push and rebuilds automatically.
+
